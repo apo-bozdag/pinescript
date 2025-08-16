@@ -1310,6 +1310,47 @@ rsi = ta.rsi(close, 14)
 emaSlope = ema_out - ema_out[5]
 superTrendSignal = enableSupertrend and dir < 0 ? -1 : enableSupertrend and dir >= 0 ? 1 : 0
 
+// WaveTrend Oscillator Ayarları
+wtEnabled = input.bool(true, "WaveTrend Kullan", group="Trend Analizi")
+n1 = input.int(10, "Channel Length", group="WaveTrend")
+n2 = input.int(21, "Average Length", group="WaveTrend")
+obLevel1 = input.int(60, "Over Bought Level 1", group="WaveTrend")
+obLevel2 = input.int(53, "Over Bought Level 2", group="WaveTrend")
+osLevel1 = input.int(-60, "Over Sold Level 1", group="WaveTrend")
+osLevel2 = input.int(-53, "Over Sold Level 2", group="WaveTrend")
+showWTLabels = input.bool(true, "Sinyal Etiketleri Göster", group="WaveTrend")
+showWTBackground = input.bool(true, "Aşırı Alım/Satım Bölgelerini Göster", group="WaveTrend")
+
+// WaveTrend Hesaplamaları
+ap = hlc3
+esa = ta.ema(ap, n1)
+d = ta.ema(math.abs(ap - esa), n1)
+ci = (ap - esa) / (0.015 * d)
+tci = ta.ema(ci, n2)
+
+wt1 = tci
+wt2 = ta.sma(wt1, 4)
+
+// WaveTrend sinyal durumları
+wtOverbought1 = wt1 >= obLevel1 or wt2 >= obLevel1  // Daha hafif aşırı alım
+wtOverbought2 = wt1 >= obLevel2 or wt2 >= obLevel2  // Daha güçlü aşırı alım
+wtOversold1 = wt1 <= osLevel1 or wt2 <= osLevel1    // Daha hafif aşırı satım
+wtOversold2 = wt1 <= osLevel2 or wt2 <= osLevel2    // Daha güçlü aşırı satım
+
+wtCrossUp = ta.crossover(wt1, wt2)   // Alım sinyali
+wtCrossDown = ta.crossunder(wt1, wt2) // Satım sinyali
+
+// Tepe ve dip noktalarını tespit et - sadece aşırı alım/satım bölgelerinde
+wtPeak = wtOverbought1 and ta.falling(wt1, 1)  // Tepe noktası
+wtTrough = wtOversold1 and ta.rising(wt1, 1)   // Dip noktası
+
+// WaveTrend sinyali (-1, 0, 1) - sinyal güçlendirildi
+wtSignal = wtOverbought2 ? -1.5 : wtOverbought1 ? -1.0 : 
+         wtOversold2 ? 1.5 : wtOversold1 ? 1.0 : 
+         wtCrossUp ? 1.0 : wtCrossDown ? -1.0 : 
+         wtPeak ? -0.5 : wtTrough ? 0.5 : 
+         wt1 > wt2 ? 0.25 : -0.25
+
 // === 2. PİVOT NOKTALARI VE DESTEK/DİRENÇ ANALİZİ ===
 // Pivot ve destek/direnç sinyalleri
 pivotSignals = 0
@@ -1350,22 +1391,26 @@ if showPremiumDiscountZonesInput
     premiumDiscountSignal := premiumZoneCheck + discountZoneCheck
 
 // === 4. TÜM SİNYALLERİ BİRLEŞTİRME ===
-// Teknik indikatör sinyalleri (RSI, MACD, EMA eğimi, SuperTrend)
-technicalSignals = (rsi > 50 ? 1 : -1) + (macdLine > 0 ? 1 : -1) + (emaSlope > 0 ? 1 : -1) + (superTrendSignal)
+// Teknik indikatör sinyalleri (RSI, MACD, EMA eğimi, SuperTrend, WaveTrend)
+// WaveTrend sinyallerini ağırlıklı olarak dahil et
+// Sinyal önemi: 
+wtCrossSignal = wtCrossUp ? 1.5 : wtCrossDown ? -1.5 : 0 // Kesim noktaları - en güçlü sinyal
+wtZoneSignal = wtOverbought2 ? -1.2 : wtOversold2 ? 1.2 : wtOverbought1 ? -0.8 : wtOversold1 ? 0.8 : 0 // Aşırı bölgeler
+wtTrendSignal = wt1 > wt2 ? 0.5 : -0.5 // Genel trend
+wtPeakTroughSignal = wtPeak ? -1.0 : wtTrough ? 1.0 : 0 // Tepe ve dip noktaları
 
-// Tüm faktörlerin ağırlıklı toplamı
-// 1. Teknik indikatörler (40%)
-// 2. Pivot ve destek/direnç seviyeleri (30%)
-// 3. Trend/Fibonacci/Premium-Discount analizi (30%)
-weightedSignal = (technicalSignals * 0.4) + (pivotDirection * 0.3) + ((emaDirectionSignal + smaDirectionSignal + priceStrength + premiumDiscountSignal) * 0.075) // 30% toplam ağırlık
+// WaveTrend toplam etkisi - algı ağırlığı arttırıldı
+wtTotalSignal = wtEnabled ? (wtCrossSignal * 0.5 + wtZoneSignal * 0.3 + wtTrendSignal * 0.1 + wtPeakTroughSignal * 0.1) : 0
 
-// -1 ile +1 arasındaki sinyali yüzdeye çevirme (-1 = %0 yükseliş, +1 = %100 yükseliş)
-bullishProbability = math.round(((weightedSignal + 1) / 2) * 100)
+technicalSignals = (rsi > 50 ? 1 : -1) + (macdLine > 0 ? 1 : -1) + (emaSlope > 0 ? 1 : -1) + (superTrendSignal) + wtTotalSignal
+weightedSignal = (technicalSignals * 0.4) + (pivotDirection * 0.3) + ((emaDirectionSignal + smaDirectionSignal + priceStrength + premiumDiscountSignal) * 0.075)
+
+// Olabilecek en yüksek ve en düşük değerleri hesaplayıp oranı düzeltelim (wtTotalSignal eklendiği için)
+const float maxSignal = 4 + 1.5  // wtTotalSignal en yüksek 1.5 olabilir
+const float minSignal = -4 - 1.5 // wtTotalSignal en düşük -1.5 olabilir
+
+bullishProbability = math.round(((weightedSignal - minSignal) / (maxSignal - minSignal)) * 100)
 bearishProbability = 100 - bullishProbability
-
-// === 5. DETAYLI ANALİZ METNİ HAZİRLAMA ===
-
-// Trend durma noktaları hesaplama
 // Mevcut ATR değerini kullanarak potansiyel hareket büyüklüğünü hesaplayalım
 float atr = ta.atr(14)
 
@@ -1431,6 +1476,32 @@ analysisDetails = ""
 if probDetailedAnalysis
     // Teknik indikatörler
     techDetails = "RSI: " + (rsi > 50 ? "Yükseliş" : "Düşüş") + " | MACD: " + (macdLine > 0 ? "Yükseliş" : "Düşüş") + " | EMA Eğimi: " + (emaSlope > 0 ? "Yükseliş" : "Düşüş")
+    
+    // WaveTrend durumu
+    if wtEnabled
+        wtStatus = ""
+        if wtOverbought2
+            wtStatus := "Güçlü Aşırı Alım"
+        else if wtOverbought1
+            wtStatus := "Aşırı Alım"
+        else if wtOversold2
+            wtStatus := "Güçlü Aşırı Satım"
+        else if wtOversold1
+            wtStatus := "Aşırı Satım"
+        else if wtCrossUp
+            wtStatus := "Alım Sinyali"
+        else if wtCrossDown
+            wtStatus := "Satım Sinyali"
+        else if wtPeak
+            wtStatus := "Tepe Noktası"
+        else if wtTrough
+            wtStatus := "Dip Noktası"
+        else if wt1 > wt2
+            wtStatus := "Yükseliş"
+        else
+            wtStatus := "Düşüş"
+        
+        techDetails := techDetails + " | WT: " + wtStatus
     
     // Pivot analizi
     pivotDetails = "Pivot: " + (pivotDirection > 0 ? "Dirençler Kırıldı" : pivotDirection < 0 ? "Destekler Kırıldı" : "Nötr")
@@ -1504,3 +1575,34 @@ if showTrendProbability and barstate.islast
         label.delete(trendTextLabel)
         // Tüm metni tek etikette birleştir - tek satırda yazım
         trendTextLabel := label.new(bar_index, position, text=trendText, color=color.new(color.black, 70), textcolor=trendColor, size=size.normal, style=style)
+
+// === WAVETREND GÖRSELLEŞTİRME ===
+// Görselleştirme ayarları
+showWaveTrendVisual = input.bool(true, title="WaveTrend Göstergelerini Göster", group="WaveTrend")
+showWTSignals = input.bool(true, title="WaveTrend Sinyal Etiketlerini Göster", group="WaveTrend")
+
+// Ana grafikte sinyal işaretleri
+if showWaveTrendVisual and showWTSignals
+    // Alım sinyali işaretleri (wt1 wt2'yi yukarı doğru kestiğinde)
+    if wtCrossUp
+        label.new(bar_index, low - (low * 0.005), text="WT AL", color=color.green, textcolor=color.white, style=label.style_label_up, size=size.small)
+    
+    // Satım sinyali işaretleri (wt1 wt2'yi aşağı doğru kestiğinde)
+    if wtCrossDown
+        label.new(bar_index, high + (high * 0.005), text="WT SAT", color=color.red, textcolor=color.white, style=label.style_label_down, size=size.small)
+        
+    // Aşırı alım bölgesinden çıkış (tepe noktası)
+    if wtPeak
+        label.new(bar_index, high + (high * 0.003), text="TEPE", color=color.new(color.red, 40), textcolor=color.red, style=label.style_circle, size=size.tiny)
+        
+    // Aşırı satım bölgesinden çıkış (dip noktası)
+    if wtTrough
+        label.new(bar_index, low - (low * 0.003), text="DİP", color=color.new(color.green, 40), textcolor=color.green, style=label.style_circle, size=size.tiny)
+
+// Arka plan renklerini belirle (ayrı bir gösterge olmadan ana grafik üzerinde gösterim)
+bgcolor(showWaveTrendVisual and wtOverbought2 ? color.new(color.red, 95) : 
+       showWaveTrendVisual and wtOversold2 ? color.new(color.green, 95) : na)
+
+// WaveTrend görselleştirmesi için ayrı indicator
+// Not: Pine Script v4'te her indicator için yeni bir script gerekiyor, inline panel oluşturulamaz
+// Bu kod içinde WaveTrend ana grafik üzerinde işaretleme yapacak
