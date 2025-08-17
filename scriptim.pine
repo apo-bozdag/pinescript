@@ -1402,6 +1402,61 @@ wtPeakTroughSignal = wtPeak ? -1.0 : wtTrough ? 1.0 : 0 // Tepe ve dip noktalar�
 // WaveTrend toplam etkisi - algı ağırlığı arttırıldı
 wtTotalSignal = wtEnabled ? (wtCrossSignal * 0.5 + wtZoneSignal * 0.3 + wtTrendSignal * 0.1 + wtPeakTroughSignal * 0.1) : 0
 
+// WaveTrend sinyal olasılıkları hesaplama
+float wtBuyProb = 0.0
+float wtSellProb = 0.0
+
+// EMA/SMA kırılım kontrolü
+emaAboveMA = ema_out > sma_out
+priceAboveEMA = close > ema_out
+priceAboveSMA = close > sma_out
+
+// Destek/direnç ile karşılaştırma
+priceNearResistance = close > plot_high1 * 0.995 and close < plot_high1 * 1.005 // Fiyat direnç seviyesine yakın
+priceNearSupport = close < plot_low1 * 1.005 and close > plot_low1 * 0.995 // Fiyat destek seviyesine yakın
+
+if wtCrossUp  // Alım sinyali
+    // Temel olasılık değeri
+    wtBuyProb := 65.0
+    
+    // Teknik analizleri kontrol et
+    wtBuyProb := wtBuyProb + (rsi < 50 and rsi > 30 ? 10.0 : 0.0)  // RSI düşük ama aşırı satım değil
+    wtBuyProb := wtBuyProb + (macdLine > 0 ? 5.0 : -5.0)           // MACD pozitif/negatif
+    wtBuyProb := wtBuyProb + (emaAboveMA ? 5.0 : -5.0)             // EMA > SMA ise trend yükselişte
+    wtBuyProb := wtBuyProb + (priceAboveEMA ? 5.0 : -5.0)         // Fiyat > EMA ise momentum yükselişte
+    
+    // Destek/direnç kontrolü
+    wtBuyProb := wtBuyProb + (priceNearSupport ? 15.0 : 0.0)       // Destek seviyesinden dönüş
+    wtBuyProb := wtBuyProb + (priceNearResistance ? -10.0 : 0.0)  // Direnç seviyesine yaklaşmış - riskli
+    
+    // Aşırı satım bölgesinden çıkış sinyali
+    wtBuyProb := wtBuyProb + (wtOversold1 ? 10.0 : 0.0)            // Aşırı satım bölgesinden çıkış
+    wtBuyProb := wtBuyProb + (wtOversold2 ? 15.0 : 0.0)           // Güçlü aşırı satım bölgesinden çıkış
+    
+    // Olasılığı sınırla (0-100 arası)
+    wtBuyProb := math.min(math.max(wtBuyProb, 0), 100)
+
+if wtCrossDown  // Satım sinyali
+    // Temel olasılık değeri
+    wtSellProb := 65.0
+    
+    // Teknik analizleri kontrol et
+    wtSellProb := wtSellProb + (rsi > 50 and rsi < 70 ? 10.0 : 0.0) // RSI yüksek ama aşırı alım değil
+    wtSellProb := wtSellProb + (macdLine < 0 ? 5.0 : -5.0)         // MACD negatif/pozitif
+    wtSellProb := wtSellProb + (emaAboveMA ? -5.0 : 5.0)           // SMA > EMA ise trend düşüşte
+    wtSellProb := wtSellProb + (priceAboveEMA ? -5.0 : 5.0)        // Fiyat < EMA ise momentum düşüşte
+    
+    // Destek/direnç kontrolü
+    wtSellProb := wtSellProb + (priceNearResistance ? 15.0 : 0.0)   // Direnç seviyesinden dönüş
+    wtSellProb := wtSellProb + (priceNearSupport ? -10.0 : 0.0)    // Destek seviyesine yaklaşmış - riskli
+    
+    // Aşırı alım bölgesinden çıkış sinyali
+    wtSellProb := wtSellProb + (wtOverbought1 ? 10.0 : 0.0)         // Aşırı alım bölgesinden çıkış
+    wtSellProb := wtSellProb + (wtOverbought2 ? 15.0 : 0.0)        // Güçlü aşırı alım bölgesinden çıkış
+    
+    // Olasılığı sınırla (0-100 arası)
+    wtSellProb := math.min(math.max(wtSellProb, 0), 100)
+
 technicalSignals = (rsi > 50 ? 1 : -1) + (macdLine > 0 ? 1 : -1) + (emaSlope > 0 ? 1 : -1) + (superTrendSignal) + wtTotalSignal
 weightedSignal = (technicalSignals * 0.4) + (pivotDirection * 0.3) + ((emaDirectionSignal + smaDirectionSignal + priceStrength + premiumDiscountSignal) * 0.075)
 
@@ -1585,19 +1640,31 @@ showWTSignals = input.bool(true, title="WaveTrend Sinyal Etiketlerini Göster", 
 if showWaveTrendVisual and showWTSignals
     // Alım sinyali işaretleri (wt1 wt2'yi yukarı doğru kestiğinde)
     if wtCrossUp
-        label.new(bar_index, low - (low * 0.005), text="WT AL", color=color.green, textcolor=color.white, style=label.style_label_up, size=size.small)
+        buyLabel = "WT AL (%" + str.tostring(math.round(wtBuyProb)) + ")"
+        // Renk yüzdesi - olasılık yüksekse daha koyu yeşil
+        buyColor = color.new(color.green, math.max(0, 80 - (0.8 * wtBuyProb)))
+        label.new(bar_index, low - (low * 0.005), text=buyLabel, color=buyColor, textcolor=color.white, style=label.style_label_up, size=size.small)
     
     // Satım sinyali işaretleri (wt1 wt2'yi aşağı doğru kestiğinde)
     if wtCrossDown
-        label.new(bar_index, high + (high * 0.005), text="WT SAT", color=color.red, textcolor=color.white, style=label.style_label_down, size=size.small)
+        sellLabel = "WT SAT (%" + str.tostring(math.round(wtSellProb)) + ")"
+        // Renk yüzdesi - olasılık yüksekse daha koyu kırmızı
+        sellColor = color.new(color.red, math.max(0, 80 - (0.8 * wtSellProb)))
+        label.new(bar_index, high + (high * 0.005), text=sellLabel, color=sellColor, textcolor=color.white, style=label.style_label_down, size=size.small)
         
     // Aşırı alım bölgesinden çıkış (tepe noktası)
     if wtPeak
-        label.new(bar_index, high + (high * 0.003), text="TEPE", color=color.new(color.red, 40), textcolor=color.red, style=label.style_circle, size=size.tiny)
+        peakLabel = "TEPE"
+        if wtOverbought2
+            peakLabel := peakLabel + " (GÜÇLÜ)"
+        label.new(bar_index, high + (high * 0.003), text=peakLabel, color=color.new(color.red, 40), textcolor=color.red, style=label.style_circle, size=size.tiny)
         
     // Aşırı satım bölgesinden çıkış (dip noktası)
     if wtTrough
-        label.new(bar_index, low - (low * 0.003), text="DİP", color=color.new(color.green, 40), textcolor=color.green, style=label.style_circle, size=size.tiny)
+        dipLabel = "DİP"
+        if wtOversold2
+            dipLabel := dipLabel + " (GÜÇLÜ)"
+        label.new(bar_index, low - (low * 0.003), text=dipLabel, color=color.new(color.green, 40), textcolor=color.green, style=label.style_circle, size=size.tiny)
 
 // Arka plan renklerini belirle (ayrı bir gösterge olmadan ana grafik üzerinde gösterim)
 bgcolor(showWaveTrendVisual and wtOverbought2 ? color.new(color.red, 95) : 
@@ -1606,3 +1673,160 @@ bgcolor(showWaveTrendVisual and wtOverbought2 ? color.new(color.red, 95) :
 // WaveTrend görselleştirmesi için ayrı indicator
 // Not: Pine Script v4'te her indicator için yeni bir script gerekiyor, inline panel oluşturulamaz
 // Bu kod içinde WaveTrend ana grafik üzerinde işaretleme yapacak
+
+// === GELECEK MUM TAHMİN MODELI ===
+showNextCandlePrediction = input.bool(true, title="Sonraki Mum Tahmini Göster", group="Tahmin Modeli")
+nextCandleStyle = input.string("Ok + Mum", title="Tahmin Görünümü", options=["Ok", "Mum", "Ok + Mum", "Gölge"], group="Tahmin Modeli")
+nextCandleTransparency = input.int(60, title="Tahmin Şeffaflığı %", minval=0, maxval=100, group="Tahmin Modeli")
+showPredictionAccuracy = input.bool(true, title="Tahmin Doğruluk Yüzdesi Göster", group="Tahmin Modeli")
+
+// Tahmin faktörleri
+var float predictedOpen = na
+var float predictedClose = na
+var float predictedHigh = na
+var float predictedLow = na
+var float predictionAccuracy = 50.0  // Başlangıç değeri %50
+var int totalPredictions = 0
+var int correctPredictions = 0
+var float atrValue = na
+var int transparencyValue = 60  // Varsayılan şeffaflık değeri
+
+// Tahmin modelini oluştur - mevcut ve önceki veriler kullanılarak gelecek mum tahmini yapılıyor
+if barstate.islast and showNextCandlePrediction
+    // ATR kullanarak muhtemel hareket miktarını hesapla
+    atrValue := ta.atr(14)
+    
+    // Tahmin yönünü hesapla (bullishProbability ve bearishProbability'e göre)
+    float directionBias = (bullishProbability - 50) / 50  // -1 ile +1 arası bir değer
+    
+    // Son kapanış fiyatını başlangıç olarak al
+    predictedOpen := close
+    
+    // WaveTrend ve diğer indikatörleri kullanarak tahmin
+    float momentumFactor = 0.0
+    
+    // WaveTrend sinyallerini değerlendir
+    if wtCrossUp
+        momentumFactor := momentumFactor + (wtBuyProb / 100)
+    if wtCrossDown
+        momentumFactor := momentumFactor - (wtSellProb / 100)
+    if wtOverbought1
+        momentumFactor := momentumFactor - 0.3
+    if wtOversold1
+        momentumFactor := momentumFactor + 0.3
+    if wt1 > wt2
+        momentumFactor := momentumFactor + 0.1
+    else
+        momentumFactor := momentumFactor - 0.1
+    
+    // RSI etkisi
+    if rsi > 70
+        momentumFactor := momentumFactor - 0.2
+    else if rsi < 30
+        momentumFactor := momentumFactor + 0.2
+    else if rsi > 50
+        momentumFactor := momentumFactor + 0.1
+    else
+        momentumFactor := momentumFactor - 0.1
+    
+    // MACD etkisi
+    if macdLine > 0 and macdLine > macdLine[1]
+        momentumFactor := momentumFactor + 0.2
+    else if macdLine < 0 and macdLine < macdLine[1]
+        momentumFactor := momentumFactor - 0.2
+    
+    // Fiyat ve hareketli ortalama ilişkisini kontrol et
+    if close > ema_out and close > sma_out
+        momentumFactor := momentumFactor + 0.15
+    else if close < ema_out and close < sma_out
+        momentumFactor := momentumFactor - 0.15
+    
+    // Pivot noktalarına yakınlık
+    if priceNearResistance
+        momentumFactor := momentumFactor - 0.3
+    if priceNearSupport
+        momentumFactor := momentumFactor + 0.3
+    
+    // Genel trend yönü ve olasılık
+    momentumFactor := momentumFactor + (directionBias * 0.5)
+    
+    // Tahmin edilen kapanış fiyatı hesaplama
+    float predictedMove = atrValue * momentumFactor
+    predictedClose := predictedOpen + predictedMove
+    
+    // Yüksek ve düşük tahminleri (volatilite bazlı)
+    float rangeFactor = math.abs(momentumFactor) < 0.2 ? 0.5 : math.abs(momentumFactor) < 0.5 ? 0.7 : 1.0
+    float predictedRange = atrValue * rangeFactor
+    
+    // Trend yönüne göre high/low ayarla
+    if momentumFactor > 0
+        // Yükselen tahmin
+        predictedHigh := predictedClose + (predictedRange * 0.6)  // Daha uzun üst gölge
+        predictedLow := predictedOpen - (predictedRange * 0.4)    // Daha kısa alt gölge
+    else
+        // Düşen tahmin
+        predictedHigh := predictedOpen + (predictedRange * 0.4)   // Daha kısa üst gölge
+        predictedLow := predictedClose - (predictedRange * 0.6)   // Daha uzun alt gölge
+    
+    // Doğruluk hesaplaması (yeni kapanış bilgisi geldiğinde)
+    if not na(predictedClose[1]) and not na(close[1])
+        totalPredictions := totalPredictions + 1
+        
+        // Önceki tahminin yönü doğru muydu?
+        bool correctDirection = (predictedClose[1] > predictedOpen[1] and close[1] > open[1]) or 
+                              (predictedClose[1] < predictedOpen[1] and close[1] < open[1])
+                              
+        // Doğru tahmin sayısını güncelle
+        if correctDirection
+            correctPredictions := correctPredictions + 1
+            
+        // Doğruluk yüzdesi hesapla (en az 5 tahmin sonrası)
+        if totalPredictions >= 5
+            predictionAccuracy := (correctPredictions / totalPredictions) * 100
+
+// Gelecek mum tahmini paneli
+if barstate.islast and showNextCandlePrediction
+    // Tahmin algoritması
+    atrValue := ta.atr(14)
+    
+    // NaN veya eksik değerleri kontrol et
+    if na(bullishProbability) or na(bearishProbability)
+        bullishProbability := 50
+        bearishProbability := 50
+    
+    float directionBias = (bullishProbability - bearishProbability) / 100
+    
+    // Tahmin hesaplaması
+    predictedOpen := close
+    float predictedMove = atrValue * directionBias
+    predictedClose := predictedOpen + predictedMove
+    
+    // NaN kontrolü
+    if na(predictedClose) or math.abs(predictedClose) > close * 2
+        predictedClose := close * (1 + 0.005 * math.sign(directionBias))  // %0.5 değişim varsayılanı
+    
+    // Yön belirleme
+    string tahminYonu = predictedClose > predictedOpen ? "Yükselme" : "Düşüş"
+    color tahminRengi = predictedClose > predictedOpen ? color.green : color.red
+    float tahminYuzdesi = math.abs(directionBias) * 100
+    
+    // Tahmin bilgilerini sabit konumda göster (panel benzeri)
+    var table tahminTablosu = table.new(position.top_right, 2, 4, border_width=1)
+    
+    // Tabloyu temizle ve yeniden oluştur
+    table.cell(tahminTablosu, 0, 0, "Sonraki Mum Tahmini", bgcolor=color.new(color.gray, 70), text_color=color.white, text_size=size.small, width=12)
+    table.cell(tahminTablosu, 1, 0, "", bgcolor=color.new(color.gray, 70), text_size=size.small, width=8)
+    
+    // Tahmin yönü
+    table.cell(tahminTablosu, 0, 1, "Yön", text_color=color.white, bgcolor=color.new(color.gray, 80), text_size=size.small)
+    table.cell(tahminTablosu, 1, 1, tahminYonu, text_color=tahminRengi, bgcolor=color.new(color.gray, 80), text_size=size.small)
+    
+    // Tahmin olasılığı
+    table.cell(tahminTablosu, 0, 2, "Güç", text_color=color.white, bgcolor=color.new(color.gray, 85), text_size=size.small)
+    table.cell(tahminTablosu, 1, 2, "% " + str.tostring(math.round(tahminYuzdesi)), text_color=tahminRengi, bgcolor=color.new(color.gray, 85), text_size=size.small)
+    
+    // Hedef fiyat
+    table.cell(tahminTablosu, 0, 3, "Hedef", text_color=color.white, bgcolor=color.new(color.gray, 80), text_size=size.small)
+    table.cell(tahminTablosu, 1, 3, str.tostring(math.round_to_mintick(predictedClose)), text_color=tahminRengi, bgcolor=color.new(color.gray, 80), text_size=size.small)
+    
+    // Ok işaretleri kaldırıldı - sadece tablo görünümü korundu

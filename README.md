@@ -1,67 +1,116 @@
-# Gelişmiş Teknik Analiz İndikatörü
+# 📊 Gelişmiş Teknik Analiz İndikatörü
 
-## Genel Bakış
-Bu indikatör, teknik analiz ve yapı kırılımları (BOS/CHoCH), destek-direnç seviyeleri, trend olasılık hesaplamaları ve çeşitli bölge tanımlamaları gibi birçok özelliki bir arada sunan kapsamlı bir araçtır.
+<div align="center">
 
-## Nasıl Kullanılır
+![Versiyon](https://img.shields.io/badge/Versiyon-3.1-blue)
+![PineScript](https://img.shields.io/badge/PineScript-v6-green)
+![TradingView](https://img.shields.io/badge/TradingView-Uyumlu-orange)
 
-### Kurulum
-1. TradingView'da gösterge ekle (Add Indicator) butonuna tıklayın
-2. "scriptim.pine" dosyasını içe aktarın veya kopyalayıp yeni bir Pine Script editörüne yapıştırın
-3. Göstergeyi grafiğinize eklemek için "Add to Chart" butonuna tıklayın
+</div>
 
-### Temel Özellikler
+## 🔍 Genel Bakış
 
-#### 1. Trend Olasılık Gösterimi
-- Mumun sağında trend yönü ve olasılık yüzdesi görüntülenir
-- Yükseliş ve düşüş olasılıkları yüzde (%) olarak gösterilir
-- Olasılık değeri ne kadar yüksekse trend o kadar güçlüdür
+Bu indikatör, profesyonel trading için geliştirilmiş kapsamlı bir teknik analiz aracıdır. Tek bir gösterge ile aşağıdaki özelliklerin tamamına erişebilirsiniz:
 
-#### 2. Destek ve Direnç Seviyeleri
-- Hesaplanan destek ve direnç seviyeleri grafik üzerinde çizgiler ve etiketler ile gösterilir
-- Bu seviyeler ATR değeri ve trend olasılıklarına göre dinamik olarak hesaplanır
+- ⚡ Gerçek zamanlı trend analizi ve olasılık hesaplamaları
+- 📈 Otomatik destek ve direnç seviyeleri
+- 🎯 Yapay zeka destekli sonraki mum tahminleri
+- 🔄 Yapı kırılımları (BOS) ve karakter değişimleri (CHoCH)
+- 💹 Premium/Discount/Denge bölgeleri tespiti
 
-#### 3. Premium/Discount/Denge Bölgeleri
-- Premium Bölge: Fiyatın yüksek olduğu, satış fırsatlarının oluşabileceği bölge
-- İndirim Bölgesi: Fiyatın düşük olduğu, alım fırsatlarının oluşabileceği bölge
-- Denge Bölgesi: Fiyatın orta seviyede olduğu bölge
+## 🛠️ Nasıl Kullanılır
 
-#### 4. Yapı Kırılımları ve Karakter Değişimleri
-- BOS (Yapı Kırılımı): Fiyatın önceki yüksek/düşükleri kırarak yeni bir yön belirlediğini gösterir
-- CHoCH (Karakter Değişimi): Fiyatın davranışında önemli bir dönüşüm olduğunu gösterir
+### ⚙️ Kurulum
 
-## Alım Satım İpuçları
+1. TradingView platformunda "**Gösterge Ekle**" (Add Indicator) butonuna tıklayın
+2. `scriptim.pine` dosyasını içe aktarın ya da kodunu yeni bir Pine Script editörüne yapıştırın
+3. "**Grafiğe Ekle**" (Add to Chart) butonuna tıklayarak göstergeyi aktifleştirin
 
-### Trade Yaparken Dikkat Edilmesi Gerekenler
+### 📊 Temel Özellikler
 
-1. **Trend Yönünde İşlem Yapın**
-   - %65 ve üzeri olasılıklar güçlü trend sinyali verir
-   - %80 ve üzeri olasılıklar çok güçlü trend sinyali verir
-   - Trend yönünde işlemler açmak her zaman daha avantajlıdır
+#### 1️⃣ Trend Tahmin Paneli
 
-2. **Destek ve Direnç Seviyelerini Kullanın**
-   - Direnç seviyelerine yaklaşıldığında kâr alma veya pozisyon küçültme düşünülebilir
-   - Destek seviyelerinde alım fırsatları değerlendirilebilir
-   - Bu seviyeler stop-loss ve take-profit belirlemede rehber olabilir
+- 📱 Ekranın sağ üst köşesinde sabit bir panel bulunur
+- 📈 Yeşil (yükseliş) veya kırmızı (düşüş) renkli göstergeler
+- 💪 Tahmin gücü yüzde (%) olarak görüntülenir
+- 🎯 Sonraki mum için hedef fiyat gösterilir
 
-3. **Bölgeleri Doğru Yorumlayın**
-   - Premium Bölge: Satış fırsatları için takip edin
-   - İndirim Bölgesi: Alım fırsatları için takip edin
-   - Bu bölgeler tek başına alım-satım sinyali değildir, diğer göstergelerle birlikte kullanın
+```
+┌───────────────────────┐
+│ Sonraki Mum Tahmini   │
+├─────────┬─────────────┤
+│ Yön     │ Yükselme    │
+├─────────┼─────────────┤
+│ Güç     │ % 75        │
+├─────────┼─────────────┤
+│ Hedef   │ 1250.45     │
+└─────────┴─────────────┘
+```
 
-4. **Yapı Kırılımları ve Karakter Değişimleri**
-   - Yapı kırılımları (BOS) yeni trend başlangıcını gösterebilir
-   - Karakter değişimleri (CHoCH) trendin güçlendiğini gösterir
-   - Bu sinyaller oluştuğunda alarmlar kurarak fırsatları kaçırmayın
+#### 2️⃣ Destek ve Direnç Seviyeleri
 
-5. **Zaman Dilimlerini Doğru Kullanın**
-   - Günlük (D), Haftalık (W) ve Aylık (M) zaman dilimlerindeki destek-direnç seviyeleri daha güçlüdür
-   - Kısa vadeli işlemlerde bile büyük zaman dilimlerindeki seviyelere dikkat edin
+- 🟢 Destek seviyeleri yeşil renkte gösterilir
+- 🔴 Direnç seviyeleri kırmızı renkte gösterilir
+- 📏 Seviyelerin gücü çizgi kalınlığı ile belirtilir
+- 🔄 ATR ve trend gücüne göre dinamik olarak hesaplanır
 
-## Önemli Not
+#### 3️⃣ Premium/Discount/Denge Bölgeleri
+
+- 🔴 **Premium Bölge**: Fiyatın aşırı yükseldiği, satış fırsatı oluşabilecek bölge
+- 🟢 **Discount Bölge**: Fiyatın aşırı düştüğü, alım fırsatı oluşabilecek bölge
+- ⚪ **Denge Bölgesi**: Fiyatın dengeli hareket ettiği nötr bölge
+
+#### 4️⃣ Yapı Kırılımları ve Karakter Değişimleri
+
+- 🧱 **BOS (Yapı Kırılımı)**: Fiyatın önceki yapıyı kırarak yeni trend başlattığını gösterir
+- 🔄 **CHoCH (Karakter Değişimi)**: Fiyat hareketindeki önemli değişimleri işaretler
+
+## 📝 Alım Satım Stratejisi
+
+### 🚦 Trade Yaparken Dikkat Edilmesi Gerekenler
+
+1. **🌊 Trend Yönünde İşlem Yapın**
+   - ✅ %65+ olasılıklar → Güçlü trend sinyali
+   - 🔥 %80+ olasılıklar → Çok güçlü trend sinyali
+   - 💡 Trend yönünde pozisyon almak başarı şansını artırır
+
+2. **⛔ Destek ve Direnç Seviyelerini Kullanın**
+   - 💰 Direnç → Kâr alma veya pozisyon küçültme
+   - 🛒 Destek → Alım fırsatı değerlendirme
+   - 🛡️ Stop-loss ve take-profit noktaları belirleme
+
+3. **🌐 Bölgeleri Doğru Yorumlayın**
+   - ⬆️ Premium Bölge → Satış fırsatları
+   - ⬇️ Discount Bölge → Alım fırsatları
+   - ⚠️ Tek başına değil, diğer sinyallerle birlikte kullanın
+
+4. **📊 Yapı Kırılımlarını Takip Edin**
+   - 🚀 BOS → Yeni trend başlangıcı
+   - 💪 CHoCH → Trendin güçlenmesi
+   - 🔔 Bu sinyaller için alarm kurmayı unutmayın
+
+5. **⏱️ Çoklu Zaman Dilimlerini Analiz Edin**
+   - 📆 Günlük (D), Haftalık (W), Aylık (M) zaman dilimlerindeki seviyeler daha güçlüdür
+   - 🔍 Büyük zaman dilimlerindeki seviyeleri küçük zaman dilimlerindeki işlemlerde de göz önünde bulundurun
+
+## ⚠️ Önemli Not
+
 Bu gösterge, finansal tavsiye niteliği taşımaz. Her zaman kendi analiz ve risk yönetimi stratejinizi geliştirin. Gösterge, teknik analiz sürecinizi desteklemek için tasarlanmış bir araçtır.
 
-## İpucu
-* Başarılı trade'ler için sadece bir göstergeye bağlı kalmayın
-* Risk yönetimi her zaman öncelikli olmalıdır
-* Göstergeyi kendi stratejinize göre uyarlamaktan çekinmeyin
+## 💎 Başarılı Trading İpuçları
+
+* 🧩 Başarılı trade'ler için sadece bir göstergeye bağlı kalmayın
+* ⚖️ Risk yönetimi her zaman öncelikli olmalıdır (sermayenizin %1-2'sinden fazlasını riske atmayın)
+* 🛠️ Göstergeyi kendi stratejinize göre özelleştirmekten çekinmeyin
+* 📚 Sürekli öğrenmeye ve stratejinizi geliştirmeye devam edin
+* 🧘 Duygusal kararlardan kaçının, disiplinli olun
+
+---
+
+<div align="center">
+
+**📱 İletişim:** [@abdullahbozdag](https://www.tradingview.com/u/abdullahbozdag/) 
+
+**🔗 Versiyon:** 3.1 | **📅 Son Güncelleme:** Ağustos 2025
+
+</div>
