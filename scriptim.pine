@@ -1815,7 +1815,7 @@ if barstate.islast and showNextCandlePrediction
     float tahminYuzdesi = math.abs(directionBias) * 100
     
     // Tahmin bilgilerini sabit konumda göster (panel benzeri)
-    var table tahminTablosu = table.new(position.top_right, 2, 4, border_width=1)
+    var table tahminTablosu = table.new(position.top_right, 2, 5, border_width=1)
     
     // Tabloyu temizle ve yeniden oluştur
     table.cell(tahminTablosu, 0, 0, "Sonraki Mum Tahmini", bgcolor=color.new(color.gray, 70), text_color=color.white, text_size=size.small, width=12)
@@ -1833,4 +1833,12 @@ if barstate.islast and showNextCandlePrediction
     table.cell(tahminTablosu, 0, 3, "Hedef", text_color=color.white, bgcolor=color.new(color.gray, 80), text_size=size.small)
     table.cell(tahminTablosu, 1, 3, str.tostring(math.round_to_mintick(predictedClose)), text_color=tahminRengi, bgcolor=color.new(color.gray, 80), text_size=size.small)
     
-    // Ok işaretleri kaldırıldı - sadece tablo görünümü korundu
+    // Tahmin sebepleri
+    string tahminSebebi = ""
+    if bullishProbability > 50
+        tahminSebebi := "RSI: " + (rsi > 50 ? "Yüksek" : "Düşük") + ", MACD: " + (macdLine > 0 ? "Yükseliş" : "Düşüş")
+    else
+        tahminSebebi := "RSI: " + (rsi < 50 ? "Düşük" : "Yüksek") + ", MACD: " + (macdLine < 0 ? "Düşüş" : "Yükseliş")
+    
+    table.cell(tahminTablosu, 0, 4, "Neden?", text_color=color.white, bgcolor=color.new(color.gray, 75), text_size=size.small)
+    table.cell(tahminTablosu, 1, 4, tahminSebebi, text_color=color.white, bgcolor=color.new(color.gray, 75), text_size=size.small)
