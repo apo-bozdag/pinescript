@@ -1643,28 +1643,32 @@ if showWaveTrendVisual and showWTSignals
         buyLabel = "WT AL (%" + str.tostring(math.round(wtBuyProb)) + ")"
         // Renk yüzdesi - olasılık yüksekse daha koyu yeşil
         buyColor = color.new(color.green, math.max(0, 80 - (0.8 * wtBuyProb)))
-        label.new(bar_index, low - (low * 0.005), text=buyLabel, color=buyColor, textcolor=color.white, style=label.style_label_up, size=size.small)
+        // Mumun altında, mumun hemen bitişindeki konuma yerleştir
+        label.new(bar_index, low, text=buyLabel, color=buyColor, textcolor=color.white, style=label.style_label_up, size=size.small, xloc=xloc.bar_index)
     
     // Satım sinyali işaretleri (wt1 wt2'yi aşağı doğru kestiğinde)
     if wtCrossDown
         sellLabel = "WT SAT (%" + str.tostring(math.round(wtSellProb)) + ")"
         // Renk yüzdesi - olasılık yüksekse daha koyu kırmızı
         sellColor = color.new(color.red, math.max(0, 80 - (0.8 * wtSellProb)))
-        label.new(bar_index, high + (high * 0.005), text=sellLabel, color=sellColor, textcolor=color.white, style=label.style_label_down, size=size.small)
+        // Mumun üstünde, mumun hemen bitişindeki konuma yerleştir
+        label.new(bar_index, high, text=sellLabel, color=sellColor, textcolor=color.white, style=label.style_label_down, size=size.small, xloc=xloc.bar_index)
         
     // Aşırı alım bölgesinden çıkış (tepe noktası)
     if wtPeak
         peakLabel = "TEPE"
         if wtOverbought2
             peakLabel := peakLabel + " (GÜÇLÜ)"
-        label.new(bar_index, high + (high * 0.003), text=peakLabel, color=color.new(color.red, 40), textcolor=color.red, style=label.style_circle, size=size.tiny)
+        // Mumun üstünde, doğrudan yakın konuma yerleştir
+        label.new(bar_index, high, text=peakLabel, color=color.new(color.red, 40), textcolor=color.red, style=label.style_circle, size=size.tiny, xloc=xloc.bar_index)
         
     // Aşırı satım bölgesinden çıkış (dip noktası)
     if wtTrough
         dipLabel = "DİP"
         if wtOversold2
             dipLabel := dipLabel + " (GÜÇLÜ)"
-        label.new(bar_index, low - (low * 0.003), text=dipLabel, color=color.new(color.green, 40), textcolor=color.green, style=label.style_circle, size=size.tiny)
+        // Mumun altında, doğrudan yakın konuma yerleştir
+        label.new(bar_index, low, text=dipLabel, color=color.new(color.green, 40), textcolor=color.green, style=label.style_circle, size=size.tiny, xloc=xloc.bar_index)
 
 // Arka plan renklerini belirle (ayrı bir gösterge olmadan ana grafik üzerinde gösterim)
 bgcolor(showWaveTrendVisual and wtOverbought2 ? color.new(color.red, 95) : 
